@@ -57,7 +57,7 @@ class MujocoPyRenderer:
         self.viewer = CustomMjViewer(sim)
         self.callbacks = {}
 
-    def set_camera(self, camera_id):
+    def set_camera(self, camera_id, fixed=False):
         """
         Set the camera view to the specified camera ID.
 
@@ -65,7 +65,10 @@ class MujocoPyRenderer:
             camera_id (int): id of the camera to set the current viewer to
         """
         self.viewer.cam.fixedcamid = camera_id
-        self.viewer.cam.type = const.CAMERA_FIXED
+        if fixed:
+            self.viewer.cam.type = const.CAMERA_FIXED
+        else:
+            self.viewer.cam.type = const.CAMERA_FREE
 
     def render(self):
         """
