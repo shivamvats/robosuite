@@ -191,17 +191,18 @@ def input2action(device, robot, active_arm="right", env_configuration=None):
     # Note: Devices output rotation with x and z flipped to account for robots starting with gripper facing down
     #       Also note that the outputted rotation is an absolute rotation, while outputted dpos is delta pos
     #       Raw delta rotations from neutral user input is captured in raw_drotation (roll, pitch, yaw)
-    dpos, rotation, raw_drotation, grasp, reset = (
+    dpos, rotation, raw_drotation, grasp, mode, reset = (
         state["dpos"],
         state["rotation"],
         state["raw_drotation"],
         state["grasp"],
+        state["mode"],
         state["reset"],
     )
 
     # If we're resetting, immediately return None
     if reset:
-        return None, None
+        return None, None, None
 
     # Get controller reference
     controller = robot.controller if not isinstance(robot, Bimanual) else robot.controller[active_arm]
@@ -261,4 +262,4 @@ def input2action(device, robot, active_arm="right", env_configuration=None):
         action = np.concatenate([dpos, drotation, [grasp] * gripper_dof])
 
     # Return the action and grasp
-    return action, grasp
+    return action, grasp, mode

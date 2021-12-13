@@ -45,6 +45,7 @@ class Keyboard(Device):
         print("")
         print_command("Keys", "Command")
         print_command("q", "reset simulation")
+        print_command("m", "mark mode change")
         print_command("spacebar", "toggle gripper (open/close)")
         print_command("w-a-s-d", "move arm horizontally in x-y plane")
         print_command("r-f", "move arm vertically")
@@ -64,6 +65,7 @@ class Keyboard(Device):
         self.pos = np.zeros(3)  # (x, y, z)
         self.last_pos = np.zeros(3)
         self.grasp = False
+        self.mode = 0
 
     def start_control(self):
         """
@@ -92,6 +94,7 @@ class Keyboard(Device):
             raw_drotation=raw_drotation,
             grasp=int(self.grasp),
             reset=self._reset_state,
+            mode=self.mode
         )
 
     def on_press(self, window, key, scancode, action, mods):
@@ -167,3 +170,6 @@ class Keyboard(Device):
             self._reset_state = 1
             self._enabled = False
             self._reset_internal_state()
+
+        elif key == glfw.KEY_M:
+            self.mode += 1
