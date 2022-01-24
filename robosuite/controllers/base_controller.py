@@ -27,13 +27,14 @@ class Controller(object, metaclass=abc.ABCMeta):
 
         actuator_range (2-tuple of array of float): 2-Tuple (low, high) representing the robot joint actuator range
     """
-
-    def __init__(
-        self,
-        sim,
-        eef_name,
-        joint_indexes,
-        actuator_range,
+    def __init__(self,
+                 sim,
+                 # eef_name,
+                 # eef position and rotation are given by different objects
+                 eef_pos_site,
+                 eef_rot_body,
+                 joint_indexes,
+                 actuator_range,
     ):
 
         # Actuator range
@@ -55,7 +56,9 @@ class Controller(object, metaclass=abc.ABCMeta):
         # mujoco simulator state
         self.sim = sim
         self.model_timestep = macros.SIMULATION_TIMESTEP
-        self.eef_name = eef_name
+        # self.eef_name = eef_name
+        self.eef_pos_site = eef_pos_site
+        self.eef_rot_body = eef_rot_body
         self.joint_index = joint_indexes["joints"]
         self.qpos_index = joint_indexes["qpos"]
         self.qvel_index = joint_indexes["qvel"]
@@ -138,18 +141,28 @@ class Controller(object, metaclass=abc.ABCMeta):
         if self.new_update or force:
             self.sim.forward()
 
-            self.ee_pos = np.array(self.sim.data.site_xpos[self.sim.model.site_name2id(self.eef_name)])
+            # self.ee_pos = np.array(self.sim.data.site_xpos[self.sim.model.site_name2id(self.eef_name)])
+            # self.ee_ori_mat = np.array(self.sim.data.site_xmat[self.sim.model.site_name2id(self.eef_name)].reshape([3, 3]))
+            # self.ee_pos_vel = np.array(self.sim.data.site_xvelp[self.sim.model.site_name2id(self.eef_name)])
+            # self.ee_ori_vel = np.array(self.sim.data.site_xvelr[self.sim.model.site_name2id(self.eef_name)])
+
+            self.ee_pos = np.array(
+                self.sim.data.site_xpos[self.sim.model.site_name2id(self.eef_pos_site)])
+            self.ee_pos_vel = np.array(self.sim.data.site_xvelp[self.sim.model.site_name2id(self.eef_pos_site)])
+
             self.ee_ori_mat = np.array(
-                self.sim.data.site_xmat[self.sim.model.site_name2id(self.eef_name)].reshape([3, 3])
-            )
-            self.ee_pos_vel = np.array(self.sim.data.site_xvelp[self.sim.model.site_name2id(self.eef_name)])
-            self.ee_ori_vel = np.array(self.sim.data.site_xvelr[self.sim.model.site_name2id(self.eef_name)])
+                self.sim.data.get_body_xmat(self.eef_rot_body).reshape([3, 3]))
+            self.ee_ori_vel = np.array(
+                self.sim.data.get_body_xvelr(self.eef_rot_body))
 
             self.joint_pos = np.array(self.sim.data.qpos[self.qpos_index])
             self.joint_vel = np.array(self.sim.data.qvel[self.qvel_index])
 
-            self.J_pos = np.array(self.sim.data.get_site_jacp(self.eef_name).reshape((3, -1))[:, self.qvel_index])
-            self.J_ori = np.array(self.sim.data.get_site_jacr(self.eef_name).reshape((3, -1))[:, self.qvel_index])
+            # self.J_pos = np.array(self.sim.data.get_site_jacp(self.eef_name).reshape((3, -1))[:, self.qvel_index])
+            # self.J_ori = np.array(self.sim.data.get_site_jacr(self.eef_name).reshape((3, -1))[:, self.qvel_index])
+
+            self.J_pos = np.array(self.sim.data.get_site_jacp(self.eef_pos_site).reshape((3, -1))[:, self.qvel_index])
+            self.J_ori = np.array(self.sim.data.get_body_jacr(self.eef_rot_body).reshape((3, -1))[:, self.qvel_index])
             self.J_full = np.array(np.vstack([self.J_pos, self.J_ori]))
 
             mass_matrix = np.ndarray(shape=(len(self.sim.data.qvel) ** 2,), dtype=np.float64, order="C")

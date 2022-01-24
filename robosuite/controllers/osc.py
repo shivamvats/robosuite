@@ -1,3 +1,8 @@
+from icecream import ic
+from robosuite.controllers.base_controller import Controller
+from robosuite.utils.control_utils import *
+import robosuite.utils.transform_utils as T
+import numpy as np
 import math
 
 import numpy as np
@@ -105,35 +110,36 @@ class OperationalSpaceController(Controller):
         AssertionError: [Invalid impedance mode]
     """
 
-    def __init__(
-        self,
-        sim,
-        eef_name,
-        joint_indexes,
-        actuator_range,
-        input_max=1,
-        input_min=-1,
-        output_max=(0.05, 0.05, 0.05, 0.5, 0.5, 0.5),
-        output_min=(-0.05, -0.05, -0.05, -0.5, -0.5, -0.5),
-        kp=150,
-        damping_ratio=1,
-        impedance_mode="fixed",
-        kp_limits=(0, 300),
-        damping_ratio_limits=(0, 100),
-        policy_freq=20,
-        position_limits=None,
-        orientation_limits=None,
-        interpolator_pos=None,
-        interpolator_ori=None,
-        control_ori=True,
-        control_delta=True,
-        uncouple_pos_ori=True,
-        **kwargs,  # does nothing; used so no error raised when dict is passed with extra terms used previously
-    ):
+    def __init__(self,
+                 sim,
+                 eef_pos_site,
+                 eef_rot_body,
+                 joint_indexes,
+                 actuator_range,
+                 input_max=1,
+                 input_min=-1,
+                 output_max=(0.05, 0.05, 0.05, 0.5, 0.5, 0.5),
+                 output_min=(-0.05, -0.05, -0.05, -0.5, -0.5, -0.5),
+                 kp=150,
+                 damping_ratio=1,
+                 impedance_mode="fixed",
+                 kp_limits=(0, 300),
+                 damping_ratio_limits=(0, 100),
+                 policy_freq=20,
+                 position_limits=None,
+                 orientation_limits=None,
+                 interpolator_pos=None,
+                 interpolator_ori=None,
+                 control_ori=True,
+                 control_delta=True,
+                 uncouple_pos_ori=True,
+                 **kwargs # does nothing; used so no error raised when dict is passed with extra terms used previously
+                 ):
 
         super().__init__(
             sim,
-            eef_name,
+            eef_pos_site,
+            eef_rot_body,
             joint_indexes,
             actuator_range,
         )
@@ -310,6 +316,8 @@ class OperationalSpaceController(Controller):
         else:
             desired_ori = np.array(self.goal_ori)
             ori_error = orientation_error(desired_ori, self.ee_ori_mat)
+            # to cache the current error
+            self.relative_ori = ori_error
 
         # Compute desired force and torque based on errors
         position_error = desired_pos - self.ee_pos
@@ -381,6 +389,10 @@ class OperationalSpaceController(Controller):
                 orientation_error(self.goal_ori, self.ori_ref)
             )  # goal is the total orientation error
             self.relative_ori = np.zeros(3)  # relative orientation always starts at 0
+
+    def set_kp(self, kp, damping_ratio=1):
+        self.kp = self.nums2array(kp, 6)
+        self.kd = 2 * np.sqrt(self.kp) * damping_ratio
 
     @property
     def control_limits(self):
