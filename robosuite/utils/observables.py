@@ -368,6 +368,13 @@ class Observable:
         except:
             raise ValueError("Current sensor for observable {} is invalid.".format(self.name))
 
+    def ground_truth_obs(self):
+        """Return corruption free observation"""
+
+        obs_cache = {}
+        gt_obs = np.array(self._sensor(obs_cache))
+        return gt_obs if self._active else None
+
     @property
     def obs(self):
         """
