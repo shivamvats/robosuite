@@ -194,7 +194,8 @@ class DoorObject(MujocoXMLObject):
     def __init__(self, name, friction=None, damping=None, lock=False):
         xml_path = "objects/door.xml"
         if lock:
-            xml_path = "objects/door_lock.xml"
+            # xml_path = "objects/door_lock.xml"
+            xml_path = "objects/door_lock_real.xml"
         super().__init__(xml_path_completion(xml_path),
                          name=name, joints=None, obj_type="all", duplicate_collision_geoms=True)
 
