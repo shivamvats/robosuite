@@ -17,13 +17,18 @@ class PandaGripperBase(GripperModel):
 
     def __init__(self, idn=0):
         super().__init__(xml_path_completion("grippers/panda_gripper.xml"), idn=idn)
+        self._init_qpos = np.array([0.020833, -0.020833])
 
     def format_action(self, action):
         return action
 
     @property
     def init_qpos(self):
-        return np.array([0.020833, -0.020833])
+        return self._init_qpos
+
+    @init_qpos.setter
+    def init_qpos(self, qpos):
+        self._init_qpos = qpos
 
     @property
     def _important_geoms(self):
