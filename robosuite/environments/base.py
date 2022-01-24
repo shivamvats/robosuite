@@ -187,6 +187,13 @@ class MujocoEnv(metaclass=EnvMeta):
             raise SimulationError("Control frequency {} is invalid".format(control_freq))
         self.control_timestep = 1.0 / control_freq
 
+    def update_sim_timestep(self, timestep):
+
+        self.sim.model.opt.timestep = timestep
+        self.model_timestep = timestep
+        if self.model_timestep <= 0:
+            raise ValueError("Invalid simulation timestep defined!")
+
     def set_model_postprocessor(self, postprocessor):
         """
         Sets the post-processor function that self.model will be passed to after load_model() is called during resets.
@@ -272,7 +279,8 @@ class MujocoEnv(metaclass=EnvMeta):
             for obs_name, obs in _observables.items():
                 self.modify_observable(observable_name=obs_name, attribute="sensor", modifier=obs._sensor)
         # Make sure that all sites are toggled OFF by default
-        self.visualize(vis_settings={vis: False for vis in self._visualizations})
+        # self.visualize(vis_settings={vis: False for vis in self._visualizations})
+        self.visualize(vis_settings={vis: True for vis in self._visualizations})
 
         if self.viewer is not None and self.renderer != "mujoco":
             self.viewer.reset()
@@ -336,7 +344,7 @@ class MujocoEnv(metaclass=EnvMeta):
         for observable in self._observables.values():
             observable.update(timestep=self.model_timestep, obs_cache=self._obs_cache, force=force)
 
-    def _get_observations(self, force_update=False):
+    def _get_observations(self, force_update=False, ground_truth=False):
         """
         Grabs observations from the environment.
         Args:
@@ -356,7 +364,11 @@ class MujocoEnv(metaclass=EnvMeta):
         # Loop through all observables and grab their current observation
         for obs_name, observable in self._observables.items():
             if observable.is_enabled() and observable.is_active():
-                obs = observable.obs
+
+                if ground_truth:
+                    obs = observable.ground_truth_obs()
+                else:
+                    obs = observable.obs
                 observations[obs_name] = obs
                 modality = observable.modality + "-state"
                 if modality not in obs_by_modality:
@@ -401,7 +413,8 @@ class MujocoEnv(metaclass=EnvMeta):
 
         # Loop through the simulation at the model timestep rate until we're ready to take the next policy step
         # (as defined by the control frequency specified at the environment level)
-        for i in range(int(self.control_timestep / self.model_timestep)):
+        n_sim_steps = int(self.control_timestep / self.model_timestep)
+        for i in range(n_sim_steps):
             self.sim.forward()
             self._pre_action(action, policy_step)
             self.sim.step()
