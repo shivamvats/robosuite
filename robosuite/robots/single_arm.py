@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 
 from collections import OrderedDict
@@ -13,6 +14,8 @@ from robosuite.utils.observables import Observable, sensor
 
 import os
 import copy
+
+logger = logging.getLogger(__name__)
 
 
 class SingleArm(Manipulator):
@@ -121,6 +124,8 @@ class SingleArm(Manipulator):
         self.controller_config["robot_name"] = self.name
         self.controller_config["sim"] = self.sim
         self.controller_config["eef_name"] = self.gripper.important_sites["grip_site"]
+        self.controller_config["eef_pos_site"] = self.gripper.important_sites["grip_site"]
+        self.controller_config["eef_rot_body"] = self.robot_model.eef_name
         self.controller_config["eef_rot_offset"] = self.eef_rot_offset
         self.controller_config["joint_indexes"] = {
             "joints": self.joint_indexes,
@@ -132,6 +137,7 @@ class SingleArm(Manipulator):
         self.controller_config["ndim"] = len(self.robot_joints)
 
         # Instantiate the relevant controller
+
         self.controller = controller_factory(self.controller_config["type"], self.controller_config)
 
     def load_model(self):
@@ -311,10 +317,12 @@ class SingleArm(Manipulator):
 
         @sensor(modality=modality)
         def eef_quat(obs_cache):
+            # this gives the arm's orientation
             return T.convert_quat(self.sim.data.get_body_xquat(self.robot_model.eef_name), to="xyzw")
 
         sensors = [eef_pos, eef_quat]
-        names = [f"{pf}eef_pos", f"{pf}eef_quat"]
+        # names = [f"{pf}eef_pos", f"{pf}eef_quat"]
+        names = ["robot_eef:pose/position", "robot_eef:pose/quat"]
 
         # add in gripper sensors if this robot has a gripper
         if self.has_gripper:
@@ -326,8 +334,21 @@ class SingleArm(Manipulator):
             def gripper_qvel(obs_cache):
                 return np.array([self.sim.data.qvel[x] for x in self._ref_gripper_joint_vel_indexes])
 
-            sensors += [gripper_qpos, gripper_qvel]
-            names += [f"{pf}gripper_qpos", f"{pf}gripper_qvel"]
+            @sensor(modality=modality)
+            def arm_joint_pos(obs_cache):
+                arm = [self.sim.data.qpos[x] for x in self._ref_joint_pos_indexes]
+                gripper = [self.sim.data.qpos[x] for x in self._ref_gripper_joint_pos_indexes]
+                return np.array(arm + gripper)
+
+            @sensor(modality=modality)
+            def gripper_position(obs_cache):
+                # only one is sufficient as the two dofs are coupled
+                return self.sim.data.qpos[self._ref_gripper_joint_pos_indexes[0]]
+
+            sensors += [gripper_qpos, gripper_qvel, arm_joint_pos,
+                        gripper_position]
+            names += [f"{pf}gripper_qpos", f"{pf}gripper_qvel",
+                      "robot:arm/joints", "robot_eef:gripper/position"]
 
         # Create observables for this robot
         for name, s in zip(names, sensors):

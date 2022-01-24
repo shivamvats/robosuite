@@ -208,12 +208,15 @@ class Robot(object):
         sensors = [joint_pos, joint_pos_cos, joint_pos_sin, joint_vel]
         names = ["joint_pos", "joint_pos_cos", "joint_pos_sin", "joint_vel"]
         # We don't want to include the direct joint pos sensor outputs
-        actives = [False, True, True, True]
+        # actives = [True, True, True, True]
+        # We do
+        actives = [True, False, False, False]
 
         # Create observables for this robot
         observables = OrderedDict()
         for name, s, active in zip(names, sensors, actives):
-            obs_name = pf + name
+            # obs_name = pf + name
+            obs_name = name
             observables[obs_name] = Observable(
                 name=obs_name,
                 sensor=s,
