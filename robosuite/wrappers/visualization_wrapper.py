@@ -129,7 +129,7 @@ class VisualizationWrapper(Wrapper):
         )
         self._vis_settings[setting] = visible
 
-    def reset(self):
+    def reset(self, **kwargs):
         """
         Extends vanilla reset() function call to accommodate visualization
 

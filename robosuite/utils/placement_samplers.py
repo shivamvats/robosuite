@@ -129,6 +129,7 @@ class UniformRandomSampler(ObjectPositionSampler):
         mujoco_objects=None,
         x_range=(0, 0),
         y_range=(0, 0),
+        z_range=(0, 0),
         rotation=None,
         rotation_axis="z",
         ensure_object_boundary_in_range=True,
@@ -138,6 +139,7 @@ class UniformRandomSampler(ObjectPositionSampler):
     ):
         self.x_range = x_range
         self.y_range = y_range
+        self.z_range = z_range
         self.rotation = rotation
         self.rotation_axis = rotation_axis
 
@@ -180,6 +182,10 @@ class UniformRandomSampler(ObjectPositionSampler):
         if self.ensure_object_boundary_in_range:
             minimum += object_horizontal_radius
             maximum -= object_horizontal_radius
+        return np.random.uniform(high=maximum, low=minimum)
+
+    def _sample_z(self):
+        minimum, maximum = self.z_range
         return np.random.uniform(high=maximum, low=minimum)
 
     def _sample_quat(self):
@@ -268,7 +274,8 @@ class UniformRandomSampler(ObjectPositionSampler):
             for i in range(5000):  # 5000 retries
                 object_x = self._sample_x(horizontal_radius) + base_offset[0]
                 object_y = self._sample_y(horizontal_radius) + base_offset[1]
-                object_z = self.z_offset + base_offset[2]
+                object_z = self._sample_z() + base_offset[2]
+                # object_z = self.z_offset + base_offset[2]
                 if on_top:
                     object_z -= bottom_offset[-1]
 

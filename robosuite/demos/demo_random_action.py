@@ -1,4 +1,5 @@
 from robosuite.controllers import load_controller_config
+from robosuite.wrappers import VisualizationWrapper, GymWrapper
 from robosuite.utils.input_utils import *
 
 if __name__ == "__main__":
@@ -54,8 +55,11 @@ if __name__ == "__main__":
         use_camera_obs=False,
         control_freq=20,
     )
+    env = GymWrapper(env)
+    env = VisualizationWrapper(env, 'default')
     env.reset()
     env.viewer.set_camera(camera_id=0)
+    env.set_indicator_pos('indicator0', [0.5, 0.5, 1.0])
 
     # Get action limits
     low, high = env.action_spec
@@ -64,4 +68,5 @@ if __name__ == "__main__":
     for i in range(10000):
         action = np.random.uniform(low, high)
         obs, reward, done, _ = env.step(action)
+        env.sim.step()
         env.render()

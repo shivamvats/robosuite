@@ -30,7 +30,10 @@
                       <geom size="0.025 0.0125 0.03125" pos="-0.03125 0.05 0" quat="0.707388 0 0.706825 0" type="box" group="0" name="latch" material="MatMetal"/>
                       <geom size="0.025 0.0125" pos="-0.0625 0.05 0" quat="0.707388 0.706825 0 0" type="cylinder" group="0" name="latch_tip" material="MatMetal"/>
                       <!-- Don't render the door handle site by default -->
-                      <site name="handle" pos="0.125 -0.10 0" size="0.02" rgba="0 0 1 0" />
+                      <!--<site name="handle" pos="0.125 -0.10 0" size="0.02" rgba="0 0 1 0" />-->
+                      <!--mid-point of the handle; this is what I will get from perception -->
+                      <site name="handle" pos="0.075 -0.10 0" size="0.02" rgba="0 0 1 0" />
+                      <site name="handle_center_of_rotation" pos="0.0 -0.10 0" size="0.02" rgba="0 0 1 0" />
                   </body>
               </body>
           </body>
