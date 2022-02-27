@@ -82,14 +82,14 @@ class GymWrapper(Wrapper, Env):
                 ob_lst.append(np.array(obs_dict[key]).flatten())
         return np.concatenate(ob_lst)
 
-    def reset(self):
+    def reset(self, **kwargs):
         """
         Extends env reset method to return flattened observation instead of normal OrderedDict.
 
         Returns:
             np.array: Flattened environment observation space after reset occurs
         """
-        ob_dict = self.env.reset()
+        ob_dict = self.env.reset(**kwargs)
         return self._flatten_obs(ob_dict)
 
     def step(self, action):
